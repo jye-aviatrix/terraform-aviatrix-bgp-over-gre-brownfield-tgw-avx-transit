@@ -18,3 +18,8 @@ variable "aviatrix_transit_gateway_route_table_names" {
     description = "Provide list of route tables to be modified. Destination point to TGW CIDR block will be pointing to TGW"
     type = list  
 }
+
+variable "aws_tgw_BGP_inside_CIDR_ranges_27" {
+  description = "Provide list of 169.254.x.x/27 IP ranges. Each range will be divided to four TGW BGP inside /29 CIDR"
+  type = list
+}
