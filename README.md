@@ -34,10 +34,19 @@ provider "aws" {
 
 ## Example variables
 ```
+# Provide Aviatrix Transit Gateway Name for this module to locate it
 gw_name="ue1transit"
+
+# Provide AWS TGW ASN number for this module to locate it
 aws_tgw_asn_number = 65100
+
+# Provide list of route tables to be modified. Destination point to TGW CIDR block will be pointing to TGW
 aviatrix_transit_gateway_route_table_names = ["aviatrix-ue1transit"]
+
+# Aviatrix Transit VPC Subnets for AWS TGW to attach to. Assuming the public subnet for Aviatrix Transit Gateway has been created by Aviatrix VPC Creator tool, name will match: Public-gateway-and-firewall-mgmt
 aviatrix_transit_gateway_vpc_public_subnet_name_contains = "Public-gateway-and-firewall-mgmt"
+
+# Provide list of 169.254.x.x/27 IP ranges. Each range will be divided to four TGW BGP inside /29 CIDR
 BGP_inside_CIDR_ranges_27 = ["169.254.100.0/27","169.254.200.0/27"]
 ```
 Since this example gives two /27 BGP inside CIDR ranges, two AWS Connect will be created and four Aviatrix Site to Cloud connections will be created. This is helpful to establish more GRE tunnels to increase throughput.
