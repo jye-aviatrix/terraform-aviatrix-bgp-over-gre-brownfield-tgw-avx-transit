@@ -3,6 +3,11 @@ resource "null_resource" "is_asn_set_on_avx_transit_gw_asn" {
   count = data.aviatrix_transit_gateway.avx_transit_gw.local_as_number == "" ? "Please make sure to set ASN on Aviatrix Transit" : 0 # Validate if Aviatrix Transit have ASN number set, error out if not set.
 }
 
+# Validate if Aviatrix Transit conflict with AWS TGW ASN number, error out if they are the same.
+resource "null_resource" "is_asn_same_on_avx_transit_gw_and_aws_tgw" {
+  count = data.aviatrix_transit_gateway.avx_transit_gw.local_as_number == var.aws_tgw_asn_number ? "Please make sure to set different ASN number on Aviatrix Transit and AWS Transit" : 0 # Validate if Aviatrix Transit conflict with AWS TGW ASN number, error out if they are the same.
+}
+
 # Validate if Aviatrix Transit have BGP ECMP enabled, error out if no enabled.
 resource "null_resource" "is_bgp_ecmp_enabled_on_avx_transit_gw" {
   count = data.aviatrix_transit_gateway.avx_transit_gw.bgp_ecmp ? 0 : "Please make sure to enable BGP ECMP on Aviatrix Transit"# Validate if Aviatrix Transit have BGP ECMP enabled, error out if no enabled.
@@ -102,7 +107,7 @@ resource "aws_ec2_transit_gateway_connect_peer" "tgw_gre_peer" {
   transit_gateway_attachment_id = local.is_ha ? aws_ec2_transit_gateway_connect.attachment[floor(count.index/4)].id : aws_ec2_transit_gateway_connect.attachment[floor(count.index/2)].id 
   bgp_asn                       = data.aviatrix_transit_gateway.avx_transit_gw.local_as_number
   tags = {
-    "Name" = local.is_ha ? "Peer-${count.index + 1}-${count.index % 2 == 0 ? data.aviatrix_transit_gateway.avx_transit_gw.gw_name : data.aviatrix_transit_gateway.avx_transit_gw.ha_gw_name}" : "Peer-${count.index + 1}-${data.aviatrix_transit_gateway.avx_transit_gw.gw_name}"
+    "Name" = local.is_ha ? "Peer-${(count.index % 4) + 1}-${count.index % 2 == 0 ? data.aviatrix_transit_gateway.avx_transit_gw.gw_name : data.aviatrix_transit_gateway.avx_transit_gw.ha_gw_name}" : "Peer-${(count.index % 2) * 2 + 1}-${data.aviatrix_transit_gateway.avx_transit_gw.gw_name}"
   }
 }
 

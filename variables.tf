@@ -1,15 +1,15 @@
 variable "gw_name" {
-  description = "Provide Aviatrix Transit Gateway Name to locate it"
+  description = "Provide Aviatrix Transit Gateway Name for this module to locate it"
   type = string
 }
 
 variable "aws_tgw_asn_number" {
-  description = "Provide AWS TGW ASN number to locate it"
+  description = "Provide AWS TGW ASN number for this module to locate it"
   type = number
 }
 
 variable "aviatrix_transit_gateway_vpc_public_subnet_name_contains" {
-  description = "Assuming the public subnet for Aviatrix Transit Gateway has been created by Aviatrix VPC Creator tool, which will have name matching: Public-gateway-and-firewall-mgmt"
+  description = "Aviatrix Transit VPC Subnets for AWS TGW to attach to. Assuming the public subnet for Aviatrix Transit Gateway has been created by Aviatrix VPC Creator tool, name will match: Public-gateway-and-firewall-mgmt"
   type = string
   default = "Public-gateway-and-firewall-mgmt"
 }

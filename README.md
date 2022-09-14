@@ -32,6 +32,14 @@ provider "aws" {
 }
 ```
 
+## Example variables
+```
+gw_name="ue1transit"
+aws_tgw_asn_number = 65100
+aviatrix_transit_gateway_route_table_names = ["aviatrix-ue1transit"]
+BGP_inside_CIDR_ranges_27 = ["169.254.100.0/27","169.254.200.0/27"]
+```
+
 ## Steps taken
 ![](20220913095913.png)  
 - Step A: Retrieve Aviatrix Transit VPC and Transit Gateways, retrieve/validate ASN, BGP_ECMP
@@ -40,13 +48,15 @@ provider "aws" {
 - Step D: Create one AWS TGW Connect using VPC Attachment as transport for each BGP_inside_CIDR_ranges_27 provided
 - Step E: In Aviatrix Transit VPC, modify subnet Public-gateway-and-firewall-mgmt-1x route table, for TGW CIDR destination, point to TGW
 - Step F: In each AWS TGW Connect, maxium 4 peers can be created.
-  - When Avx Transit GW HA is enabled, create four peers
+  - When Avx Transit GW HA is enabled, create four peers:
     - First peer point to Aviatrix Primary Transit GW LAN IP as Peer GRE (outer address)
     - Second peer point to Aviatrix HA Transit GW LAN IP as Peer GRE (outer address)
     - Third peer point to Aviatrix Primary Transit GW LAN IP as Peer GRE (outer address)
     - Fourth peer point to Aviatrix HA Transit GW LAN IP as Peer GRE (outer address)
     - See below for inner address explaination
-  - When Avx Transit GW HA is disabled, create two peers
+  - When Avx Transit GW HA is disabled, peer 1 and peer 3 will be created:
+    - First peer point to Aviatrix Primary Transit GW LAN IP as Peer GRE (outer address)
+    - Third peer point to Aviatrix Primary Transit GW LAN IP as Peer GRE (outer address)
 - Step G: In Aviatrix Transit, create two external connections for each BGP_inside_CIDR_ranges_27 provided
   - Do not use Enable Remote Gateway HA
   - Over Private Network is enabled
@@ -54,11 +64,19 @@ provider "aws" {
     - First connection use TGW Peer1 and Peer2's outer BGP address (192.168.1.x in this example) as Remote Gateway IP (Orange lines)
     - Second connection use TGW Peer3 and Peer4's outer BGP address (192.168.1.x in this example) as Remote Gateway IP (Blue lines)
     - See below for inner address explaination
+  - When Avx Transit GW HA is disabled:
+    - First connection use TGW Peer1's outer BGP address (192.168.1.x in this example) as Remote Gateway IP (Orange lines)
+    - Second connection use TGW Peer3's outer BGP address (192.168.1.x in this example) as Remote Gateway IP (Blue lines)
 
 
 
 ## GRE tunnel Inner IPs
-![](20220913101944.png)  
+### When Aviatrix Transit GW HA is enabled
+![](20220913101944.png)
+
+### When Aviatrix Transit GW HA is disabled
+![](20220914165009.png)  
+
 * For each AWS TGW Connect Peer (Using GRE), TGW is looking for a single remote GRE peer outer address. TGW will assign two GRE outer address for each Connect Peer. TGW also require a /29 block for it's BGP Inside CIDR blocks. within the block, TGW assign first IP for remote peer inside IP, and assign 2nd and 3rd IP for it's own inside IP.
 * Aviatrix Transit Gateway Site to Cloud Connection always uses it's primary and HA Transit Gateway's LAN IP as GRE outer address. As shown below, the two orange lines indicate one Site to Cloud connection. It will use TGW Connect Peer1/Peer2's CIDR (192.168.1.x/24 in this example) as outer GRE peer address. It will use the first IP of each /29 space range as it's local inner tunnel IP, and second IP of each /29 space range as it's remote inner tunnel IP.
 
@@ -100,8 +118,6 @@ CoPilot Cloud Routes -> BGP Info shows inner IP configuration
 Notice each peer, second BGP peering is not been used
 ![](20220913100248.png)
 
-
-# Each AWS Connect can create 4 peers, for additional GRE tunnels, create more AWS Connect for more peers
 
 # Estimated cost
 ```
