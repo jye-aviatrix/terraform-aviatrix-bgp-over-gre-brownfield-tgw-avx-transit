@@ -3,6 +3,10 @@ resource "null_resource" "is_asn_set_on_avx_transit_gw_asn" {
   count = data.aviatrix_transit_gateway.avx_transit_gw.local_as_number == "" ? "Please make sure to set ASN on Aviatrix Transit" : 0 # Validate if Aviatrix Transit have ASN number set, error out if not set.
 }
 
+# Validate if Aviatrix Transit have BGP ECMP enabled, error out if no enabled.
+resource "null_resource" "is_bgp_ecmp_enabled_on_avx_transit_gw" {
+  count = data.aviatrix_transit_gateway.avx_transit_gw.bgp_ecmp ? 0 : "Please make sure to enable BGP ECMP on Aviatrix Transit"# Validate if Aviatrix Transit have BGP ECMP enabled, error out if no enabled.
+}
 
 # Validate if AWS TGW have CIDR block set, error out if no set.
 resource "null_resource" "is_cidr_block_set_on_aws_tgw" {
