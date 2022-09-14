@@ -8,7 +8,7 @@ Last tested on:
 - Aviatrix Provider: 2.23.0
 - Aviatrix Controller: 6.8.1149
 
-## Pre-requsits
+## Prerequisites
 
 - Lookup https://registry.terraform.io/providers/AviatrixSystems/aviatrix/latest/docs/guides/release-compatibility for aviatrix provider version that's compatiable with your controller version
 - Use following providers.tf
@@ -37,8 +37,10 @@ provider "aws" {
 gw_name="ue1transit"
 aws_tgw_asn_number = 65100
 aviatrix_transit_gateway_route_table_names = ["aviatrix-ue1transit"]
+aviatrix_transit_gateway_vpc_public_subnet_name_contains = "Public-gateway-and-firewall-mgmt"
 BGP_inside_CIDR_ranges_27 = ["169.254.100.0/27","169.254.200.0/27"]
 ```
+Since this example gives two /27 BGP inside CIDR ranges, two AWS Connect will be created and four Aviatrix Site to Cloud connections will be created. This is helpful to establish more GRE tunnels to increase throughput.
 
 ## Steps taken
 ![](20220913095913.png)  
