@@ -46,3 +46,32 @@ count = length(setproduct(flatten([for x in var.aviatrix_transit_gateway_route_t
     create = "5m"
   }
 }
+
+# From TGW Create GRE peering connection to Aviatrix transit via private connection.
+resource "aws_ec2_transit_gateway_connect_peer" "tgw_gre_peer" {
+  count                         = local.is_ha ? length(var.aws_tgw_BGP_inside_CIDR_ranges_27)*4 : length(var.aws_tgw_BGP_inside_CIDR_ranges_27)*2
+  peer_address                  = local.is_ha ? (count.index % 2 == 0 ? data.aviatrix_transit_gateway.avx_transit_gw.private_ip : data.aviatrix_transit_gateway.avx_transit_gw.ha_private_ip) : data.aviatrix_transit_gateway.avx_transit_gw.private_ip
+  inside_cidr_blocks            = local.is_ha ? [(cidrsubnets(var.aws_tgw_BGP_inside_CIDR_ranges_27[floor(count.index/4)], 2, 2, 2, 2))[count.index % 4]] : [(cidrsubnets(var.aws_tgw_BGP_inside_CIDR_ranges_27[floor(count.index/2)], 2, 2, 2, 2))[count.index % 2]]
+  transit_gateway_attachment_id = aws_ec2_transit_gateway_connect.attachment.id
+  bgp_asn                       = data.aviatrix_transit_gateway.avx_transit_gw.local_as_number
+  tags = {
+    "Name" = local.is_ha ? "Peer-${count.index + 1}-${count.index % 2 == 0 ? data.aviatrix_transit_gateway.avx_transit_gw.gw_name : data.aviatrix_transit_gateway.avx_transit_gw.ha_gw_name}" : "Peer-${count.index + 1}-${data.aviatrix_transit_gateway.avx_transit_gw.gw_name}"
+  }
+}
+
+# # From Aviatrix Transit, create GRE peering connection to AWS TGW
+# resource "aviatrix_transit_external_device_conn" "to_tgw" {
+#   count              = 2
+#   vpc_id             = module.mc-transit.transit_gateway.vpc_id
+#   connection_name    = "${var.aws_tgw_name}-${count.index + 1}"
+#   gw_name            = module.mc-transit.transit_gateway.gw_name
+#   connection_type    = "bgp"
+#   tunnel_protocol    = "GRE"
+#   bgp_local_as_num   = module.mc-transit.transit_gateway.local_as_number
+#   bgp_remote_as_num  = aws_ec2_transit_gateway.tgw.amazon_side_asn
+#   remote_gateway_ip  = "${aws_ec2_transit_gateway_connect_peer.tgw_gre_peer[count.index * 2].transit_gateway_address},${aws_ec2_transit_gateway_connect_peer.tgw_gre_peer[count.index * 2 + 1].transit_gateway_address}"
+#   direct_connect     = true
+#   ha_enabled         = false
+#   local_tunnel_cidr  = "${cidrhost(local.aws_tgw_BGP_inside_CIDR_ranges_29[count.index * 2], 1)}/29,${cidrhost(local.aws_tgw_BGP_inside_CIDR_ranges_29[count.index * 2 + 1], 1)}/29"
+#   remote_tunnel_cidr = "${cidrhost(local.aws_tgw_BGP_inside_CIDR_ranges_29[count.index * 2], 2)}/29,${cidrhost(local.aws_tgw_BGP_inside_CIDR_ranges_29[count.index * 2 + 1], 2)}/29"
+# }
