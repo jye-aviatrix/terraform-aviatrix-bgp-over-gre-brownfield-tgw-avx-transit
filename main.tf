@@ -41,10 +41,11 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "tgw_to_avx_transit_vpc" {
 
 # Create AWS TGW Connect Attachment point to TGW VPC attachment
 resource "aws_ec2_transit_gateway_connect" "attachment" {
+  count = local.total_BGP_inside_CIDR_ranges_27
   transport_attachment_id = aws_ec2_transit_gateway_vpc_attachment.tgw_to_avx_transit_vpc.id
   transit_gateway_id      = data.aws_ec2_transit_gateway.tgw.id
   tags = {
-    "Name" = "${data.aviatrix_transit_gateway.avx_transit_gw.gw_name}-Connect"
+    "Name" = "${data.aviatrix_transit_gateway.avx_transit_gw.gw_name}-Connect-${count.index+1}"
   }
 }
 
@@ -78,6 +79,8 @@ resource "aws_route" "route_to_tgw_cidr_block" {
 #
 # BGP CIDR = floor(index/4) -> index mod 4
 #
+# AWS Connect Index -> floor(index/4)
+#
 # is_ha == false
 #
 # 0 -> c0 Pr <-Index 0
@@ -91,11 +94,12 @@ resource "aws_route" "route_to_tgw_cidr_block" {
 
 # Remote peer -> Always primary GW
 # BGP CIDR = floor(index/2) -> (index mod 2) * 2
+# AWS Connect Index -> floor(index/2)
 resource "aws_ec2_transit_gateway_connect_peer" "tgw_gre_peer" {
   count                         = local.is_ha ? local.total_BGP_inside_CIDR_ranges_27 * 4 : local.total_BGP_inside_CIDR_ranges_27 * 2
   peer_address                  = local.is_ha ? (count.index % 2 == 0 ? data.aviatrix_transit_gateway.avx_transit_gw.private_ip : data.aviatrix_transit_gateway.avx_transit_gw.ha_private_ip) : data.aviatrix_transit_gateway.avx_transit_gw.private_ip
   inside_cidr_blocks            = local.is_ha ? [local.BGP_inside_CIDR_ranges_29[floor(count.index / 4)][count.index % 4]] : [local.BGP_inside_CIDR_ranges_29[floor(count.index / 2)][(count.index % 2 * 2)]]
-  transit_gateway_attachment_id = aws_ec2_transit_gateway_connect.attachment.id
+  transit_gateway_attachment_id = local.is_ha ? aws_ec2_transit_gateway_connect.attachment[floor(count.index/4)].id : aws_ec2_transit_gateway_connect.attachment[floor(count.index/2)].id 
   bgp_asn                       = data.aviatrix_transit_gateway.avx_transit_gw.local_as_number
   tags = {
     "Name" = local.is_ha ? "Peer-${count.index + 1}-${count.index % 2 == 0 ? data.aviatrix_transit_gateway.avx_transit_gw.gw_name : data.aviatrix_transit_gateway.avx_transit_gw.ha_gw_name}" : "Peer-${count.index + 1}-${data.aviatrix_transit_gateway.avx_transit_gw.gw_name}"
