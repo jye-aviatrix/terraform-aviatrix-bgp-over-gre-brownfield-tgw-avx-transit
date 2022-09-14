@@ -19,7 +19,7 @@ variable "aviatrix_transit_gateway_route_table_names" {
     type = list  
 }
 
-variable "aws_tgw_BGP_inside_CIDR_ranges_27" {
+variable "BGP_inside_CIDR_ranges_27" {
   description = "Provide list of 169.254.x.x/27 IP ranges. Each range will be divided to four TGW BGP inside /29 CIDR"
   type = list
 }
