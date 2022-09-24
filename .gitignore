@@ -31,6 +31,3 @@ override.tf.json
 
 
 .terraform.lock.hcl
-
-test.json
-providers.tf
