@@ -8,6 +8,12 @@ data "aws_ec2_transit_gateway" "tgw" {
     name   = "options.amazon-side-asn"
     values = [var.aws_tgw_asn_number]
   }
+
+  filter {
+    name = "state"
+    values = ["available"]
+  }
+  
 }
 
 data "aws_vpc" "avx_transit_vpc" {
